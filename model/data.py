@@ -39,14 +39,13 @@ class Data(object):
 
     def bc_points(self, boundary_point):
         num_bcs = len(self.bcs)
-        x_bcs = np.empty((0, self.geom.dim + num_bcs + 1))
+        x_bcs = np.zeros((0, self.geom.dim + num_bcs + 1))
         
         for i, bc in enumerate(self.bcs):
             bc_points = bc.collocation_points(boundary_point)
             bc_tag = np.zeros((len(bc_points), num_bcs + 1))
             bc_tag[:,i] = 1
             bc_points_tag = np.hstack((bc_points, bc_tag))
-            # print("bc_points_tag: ", bc_points_tag)
             x_bcs = np.vstack((x_bcs, bc_points_tag))
             bc.set_tag(i)
 

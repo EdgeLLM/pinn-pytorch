@@ -9,8 +9,6 @@ def plot_2D(net_apply, data, step=0.001, model_path=None):
     plot_dict = dict_2D(net_apply, data, step, model_path)
 
     fig, axs = plt.subplots(figsize=(10, 4))
-    # fig, axs = plt.subplots(2,3)
-#     axs = axs.ravel()
 
     i = 0
     
@@ -33,7 +31,6 @@ def plot_2D(net_apply, data, step=0.001, model_path=None):
         axs.set_xlabel(x_label, fontsize=20) 
         axs.set_ylabel(y_label, fontsize=20) 
         axs.tick_params(labelsize='large')
-        # axs[i].set(ylabel = y_label)
         fig.colorbar(im, ax=axs)
         i = i + 1
     plt.subplots_adjust(hspace=0.5)
@@ -52,8 +49,6 @@ def dict_2D(net_apply, data, step, model_path):
         test_input = torch.from_numpy(value).float()
         test_predict = net_apply(test_input)
         
-    #     test_predict = batched_predict(net_params,test_input)
-    #     print(test_predict)
         if key == 'x,y':
             plot_array = (test_predict.reshape(test_len[0],test_len[1])).T
 
@@ -63,9 +58,9 @@ def dict_2D(net_apply, data, step, model_path):
         plot_dict[key] = plot_array
     return plot_dict
 
-def torch_plot_3D_boundary(model_path, net_apply, data, plat='jax',step=0.001):
+def torch_plot_3D_boundary(model_path, net_apply, data, plat='jax',step=0.001, component_y=0):
 
-    plot_dict = dict_3D_bondary(model_path, net_apply, data, step, plat)
+    plot_dict = dict_3D_bondary(model_path, net_apply, data, step, plat, component_y)
 
     fig, axs = plt.subplots(2,3, figsize=(15, 10))
     # fig, axs = plt.subplots(2,3)
@@ -134,21 +129,24 @@ def torch_plot_3D_boundary(model_path, net_apply, data, plat='jax',step=0.001):
         else:
             raise ValueError("The key is not right.")
         
-        im = axs[i].imshow(value,extent=(extent_x_min, extent_x_max, extent_y_min, extent_y_max), vmin=-1, vmax=1,  interpolation='nearest', cmap='seismic', origin='lower', aspect='auto')
+#         im = axs[i].imshow(value,extent=(extent_x_min, extent_x_max, extent_y_min, extent_y_max), vmin=-1, vmax=1,  interpolation='nearest', cmap='seismic', origin='lower', aspect='auto')
+        im = axs[i].imshow(value,extent=(extent_x_min, extent_x_max, extent_y_min, extent_y_max), interpolation='nearest', cmap='seismic', origin='lower', aspect='auto')
         axs[i].set_title(key_trans, fontsize=16)
         axs[i].set_xlabel(x_label, fontsize=16.0) 
         axs[i].set_ylabel(y_label, fontsize=16.0) 
         axs[i].tick_params(labelsize='large')
-        # axs[i].set(ylabel = y_label)
+
         fig.colorbar(im, ax=axs[i])
         i = i + 1
     plt.subplots_adjust(hspace=0.5)
     plt.tight_layout()
     plt.show()
 
-def dict_3D_bondary(model_path, net_apply, data, step, plat):
+def dict_3D_bondary(model_path, net_apply, data, step, plat, component_y):
     if plat == 'jax':
         net_params_load = np.load(model_path, allow_pickle=True)
+    elif model_path == 'exact':
+        print("Output Exact Solution.")
     elif plat == 'torch':
         net_apply.load_state_dict(torch.load(model_path))
         net_apply.eval()
@@ -170,13 +168,13 @@ def dict_3D_bondary(model_path, net_apply, data, step, plat):
     #     test_predict = batched_predict(net_params,test_input)
     #     print(test_predict)
         if key == 'z_min' or key == 'z_max':
-            plot_array = (test_predict.reshape(test_len[0],test_len[1])).T
+            plot_array = (test_predict[:,component_y].reshape(test_len[0],test_len[1])).T
             
         elif key == 'y_min' or key == 'y_max':
-            plot_array = (test_predict.reshape(test_len[0],test_len[2])).T
+            plot_array = (test_predict[:,component_y].reshape(test_len[0],test_len[2])).T
             
         elif key == 'x_min' or key == 'x_max':
-            plot_array = (test_predict.reshape(test_len[1],test_len[2])).T
+            plot_array = (test_predict[:,component_y].reshape(test_len[1],test_len[2])).T
             
         else:
             raise ValueError("The key is not right.")

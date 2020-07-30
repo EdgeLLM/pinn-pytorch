@@ -18,6 +18,8 @@ class BC(object):
         self.on_boundary = on_boundary
         self.component_x = component_x
         self.component_y = component_y 
+        self.inputdim = self.geom.dim
+        self.outputdim = None
         self.tag = None
 
     def set_tag(self, tag):
@@ -51,7 +53,8 @@ class DirichletBC(BC):
             raise RuntimeError(
                 "DirichletBC should output 1D values. Use argument 'component' for different components."
             )
-        return predicts - values
+
+        return predicts[:,self.component_y] - values
 
 
 class NeumannBC(BC):
@@ -64,4 +67,25 @@ class NeumannBC(BC):
         self.type = 'Neumann'
 
     def error(self, X, first_grads):
-        return first_grads[:, self.component_x] - torch.squeeze(self.func(X))
+        column_index = self.component_y * self.inputdim + self.component_x
+        return first_grads[:, column_index] - torch.squeeze(self.func(X)).cuda()
+
+class HessianBC(BC):
+    """Hessian boundary conditions: d^2y/d(x1^2) = func(x) or d^2y/d(x1 x2).
+    """
+
+    def __init__(self, geom, func, on_boundary, component_x=[], component_y=0):
+        super(HessianBC, self).__init__(geom, on_boundary, component_x, component_y)
+        self.func = func
+        self.type = 'Hessian'
+
+    def error(self, X, second_grads):
+        
+        if(len(self.component_x) != 2):
+            raise RuntimeError(
+                "HessianBC is used for second order grads."
+            )
+            
+        column_index = self.inputdim * self.component_x[0] + self.component_x[1]
+        
+        return second_grads[self.component_y][:, column_index] - torch.squeeze(self.func(X)).cuda()
